@@ -325,8 +325,7 @@
             "Global"
 
             token-set
-            (-> (ctob/make-token-set :name set-name)
-                (ctob/add-token token))
+            (ctob/make-token-set :name set-name)
 
             hidden-theme
             (ctob/make-hidden-theme)
@@ -337,11 +336,13 @@
             changes
             (-> (pcb/empty-changes)
                 (pcb/with-library-data data)
-                (pcb/set-token-set set-name token-set)
+                (pcb/set-token-set (ctob/get-id token-set) token-set)
+                (pcb/set-token (ctob/get-id token-set) (:id token) token)
                 (pcb/set-token-theme (:group hidden-theme)
                                      (:name hidden-theme)
                                      hidden-theme-with-set)
                 (pcb/update-active-token-themes #{ctob/hidden-theme-path}))]
+        (js/console.log "changes" (clj->js changes))
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
@@ -374,7 +375,8 @@
     (watch [it state _]
       (let [token-set (lookup-token-set state)
             data      (dsh/lookup-file-data state)
-            token     (ctob/get-token token-set id)
+            token     (-> (get-tokens-lib state)
+                          (ctob/get-token-in-set (ctob/get-id token-set) id))
             token'    (->> (merge token params)
                            (into {})
                            (ctob/make-token))
@@ -407,15 +409,17 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [token-set (lookup-token-set state)]
-        (when-let [token (ctob/get-token token-set token-id)]
-          (let [tokens (ctob/get-tokens token-set)
-                unames (map :name tokens)
-                suffix (tr "workspace.tokens.duplicate-suffix")
-                copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)]
-
-            (rx/of (create-token (assoc token
-                                        :id (uuid/next)
-                                        :name copy-name)))))))))
+        (when-let [tokens-lib (get-tokens-lib state)]
+          (when-let [token (ctob/get-token-in-set tokens-lib
+                                                  (ctob/get-id token-set)
+                                                  token-id)]
+            (let [tokens (ctob/get-tokens-in-set-seq tokens-lib (ctob/get-id token-set))
+                  unames (map :name tokens)
+                  suffix (tr "workspace.tokens.duplicate-suffix")
+                  copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)]
+              (rx/of (create-token (assoc token
+                                          :id (uuid/next)
+                                          :name copy-name))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKEN UI OPS

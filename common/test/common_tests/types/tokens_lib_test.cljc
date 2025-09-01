@@ -81,11 +81,11 @@
     (t/is (= (ctob/get-name token-set1) "test-token-set-1"))
     (t/is (= (ctob/get-description token-set1) ""))
     (t/is (some? (ctob/get-modified-at token-set1)))
-    (t/is (empty? (ctob/get-tokens-map token-set1)))
+    (t/is (empty? (ctob/get-tokens-map- token-set1)))
     (t/is (= (ctob/get-name token-set2) "test-token-set-2"))
     (t/is (= (ctob/get-description token-set2) "test description"))
     (t/is (= (ctob/get-modified-at token-set2) now))
-    (t/is (empty? (ctob/get-tokens-map token-set2)))))
+    (t/is (empty? (ctob/get-tokens-map- token-set2)))))
 
 (t/deftest make-invalid-token-set
   (let [params {:name 777 :description 999}]
@@ -189,8 +189,8 @@
                                                                    "baz.boo" (ctob/make-token :name "baz.boo"
                                                                                               :type :boolean
                                                                                               :value true)})))
-        expected (-> (ctob/get-set tokens-lib (thi/id :test-token-set))
-                     (ctob/get-tokens-map)
+        expected (-> tokens-lib
+                     (ctob/get-tokens-in-set-map (thi/id :test-token-set))
                      (ctob/tokens-tree))]
     (t/is (= (get-in expected ["foo" "bar" "baz" :name]) "foo.bar.baz"))
     (t/is (= (get-in expected ["foo" "bar" "bam" :name]) "foo.bar.bam"))
@@ -316,11 +316,11 @@
                                                                                      :type :boolean
                                                                                      :value true)})))
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        token (ctob/get-token token-set-copy (thi/id :test-token))]
+        token (ctob/get-token- token-set-copy (thi/id :test-token))]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 1))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 1))
     (t/is (= (:name token) "test-token"))))
 
 (t/deftest duplicate-token-set-twice
@@ -336,11 +336,11 @@
         tokens-lib (ctob/add-set tokens-lib (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"}))
 
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        token (ctob/get-token token-set-copy (thi/id :test-token))]
+        token (ctob/get-token- token-set-copy (thi/id :test-token))]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy-2"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 1))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 1))
     (t/is (= (:name token) "test-token"))))
 
 (t/deftest duplicate-empty-token-set
@@ -349,11 +349,11 @@
                                                                :name "test-token-set")))
 
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        tokens         (ctob/get-tokens-map token-set-copy)]
+        tokens         (ctob/get-tokens-map- token-set-copy)]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 0))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 0))
     (t/is (= (count tokens) 0))))
 
 (t/deftest duplicate-not-existing-token-set
@@ -377,10 +377,12 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :token))]
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :token))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 1))
+    (t/is (= (count (ctob/get-tokens-in-set-map tokens-lib' (thi/id :test-token-set))) 1))
     (t/is (= (:name token') "test-token"))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
@@ -416,12 +418,18 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-1))
-        token'      (ctob/get-token token-set' (thi/id :test-token-1))]
+        token       (ctob/get-token-in-set tokens-lib
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-1))
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-1))
+        tokens'     (ctob/get-tokens-in-set-map tokens-lib'
+                                                (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 2))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "test-token-1") 0))
+    (t/is (= (count tokens') 2))
+    (t/is (= (d/index-of (keys tokens') "test-token-1") 0))
     (t/is (= (:name token') "test-token-1"))
     (t/is (= (:description token') "some description"))
     (t/is (= (:value token') false))
@@ -451,12 +459,18 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-1))
-        token'      (ctob/get-token token-set' (thi/id :test-token-1))]
+        token       (ctob/get-token-in-set tokens-lib
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-1))
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-1))
+        tokens'     (ctob/get-tokens-in-set-map tokens-lib'
+                                                (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 2))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "updated-name") 0))
+    (t/is (= (count tokens') 2))
+    (t/is (= (d/index-of (keys tokens') "updated-name") 0))
     (t/is (= (:name token') "updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
@@ -479,10 +493,14 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :test-token))]
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token))
+        tokens'     (ctob/get-tokens-in-set-map tokens-lib'
+                                                (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 0))
+    (t/is (= (count tokens') 0))
     (t/is (nil? token'))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
@@ -893,8 +911,7 @@
                                                                :type :boolean
                                                                :value true)))
 
-        set             (ctob/get-set tokens-lib (thi/id :test-token-set))
-        tokens-list     (ctob/get-tokens set)]
+        tokens-list    (ctob/get-tokens-in-set-seq tokens-lib (thi/id :test-token-set))]
 
     (t/is (= (count tokens-list) 5))
     (t/is (= (:name (nth tokens-list 0)) "token1"))
@@ -932,8 +949,12 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token-in-set tokens-lib
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (:name token') "group1.test-token-2"))
@@ -970,8 +991,12 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token-in-set tokens-lib
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (:name token') "group1.updated-name"))
@@ -1008,11 +1033,17 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token-in-set tokens-lib
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))
+        tokens'     (ctob/get-tokens-in-set-map tokens-lib'
+                                                (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "group2.updated-name") 1))
+    (t/is (= (d/index-of (keys tokens') "group2.updated-name") 1))
     (t/is (= (:name token') "group2.updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
@@ -1038,10 +1069,14 @@
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token'      (ctob/get-token-in-set tokens-lib'
+                                           (thi/id :test-token-set)
+                                           (thi/id :test-token-2))
+        tokens'     (ctob/get-tokens-in-set-map tokens-lib'
+                                                (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 1))
+    (t/is (= (count tokens') 1))
     (t/is (nil? token'))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
