@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+- Invitations management improvements [Taiga #3479](https://tree.taiga.io/project/penpot/us/3479)
 
 ### :bug: Bugs fixed
 
