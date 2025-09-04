@@ -5,6 +5,7 @@ use crate::{
 
 use core::f32;
 use macros::ToJs;
+use core::f32;
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
