@@ -60,3 +60,20 @@ pub extern "C" fn update_shape_text_layout() {
         }
     });
 }
+
+#[no_mangle]
+pub extern "C" fn get_caret_position_at(x: f32, y: f32) {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        if let Type::Text(text_content) = &mut shape.shape_type {
+            if text_content.layout.needs_update() {
+                text_content.update_layout(shape.selrect);
+            }
+            // TODO: Esta función debería retornar la posición y
+            // que se actualice en el estado del editor
+            // en qué coordenadas nos encontramos.
+            text_content.get_caret_position_at(x, y);
+        } else {
+            panic!("Trying to update grow type in a shape that it's not a text shape");
+        }
+    });
+}

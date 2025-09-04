@@ -528,6 +528,12 @@
           Module._init_shapes_pool(1);
           setupInteraction(canvas);
 
+          canvas.addEventListener('click', (e) => {
+            console.log('click', e.type, e);
+            useShape(uuid);
+            Module._get_caret_position_at(e.offsetX, e.offsetY);
+          })
+
           storeFonts(fonts)
 
           console.log("text shape", uuid);

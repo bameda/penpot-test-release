@@ -5,7 +5,6 @@ use crate::{
 
 use core::f32;
 use macros::ToJs;
-use core::f32;
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
@@ -15,6 +14,7 @@ use skia_safe::{
 use std::collections::HashSet;
 
 use super::FontFamily;
+use crate::math::Point;
 use crate::shapes::{self, merge_fills};
 use crate::utils::uuid_from_u32;
 use crate::utils::{get_fallback_fonts, get_font_collection};
@@ -235,6 +235,20 @@ impl TextContent {
         let p1 = transform.map_point(skia::Point::new(left, top));
         let p2 = transform.map_point(skia::Point::new(right, bottom));
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    pub fn get_caret_position_at(&mut self, x: f32, y: f32) {
+        let point = Point::new(x, y);
+        self.layout
+            .paragraphs
+            .iter()
+            .flatten()
+            .for_each(|paragraph| {
+                // TODO: Habrá que ver si tenemos que restarle las coordenadas
+                // del selrect al punto.
+                let position_with_affinity = paragraph.get_glyph_position_at_coordinate(point);
+                println!("position_with_affinity {:?}", position_with_affinity);
+            });
     }
 
     /// Builds the ParagraphBuilders necessary to render
