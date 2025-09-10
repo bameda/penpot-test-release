@@ -156,10 +156,11 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
-   [:value {:optional true} [:maybe [:or
-                                     :int
-                                     :string
-                                     [:= :multiple]]]]
+  ;;  Crash with decimal numbers
+  ;;  [:value {:optional true} [:maybe [:or
+  ;;                                    :int
+  ;;                                    :string
+  ;;                                    [:= :multiple]]]]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
@@ -195,7 +196,7 @@
         tokens          (if (object? tokens)
                           (mfu/bean tokens)
                           tokens)
-
+        _ (prn value)
         value           (if (= :multiple applied-token)
                           :multiple
                           value)

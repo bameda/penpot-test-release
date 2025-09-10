@@ -124,6 +124,7 @@
     :token-typography-types
     :token-typography-composite
     :transit-readable-response
+    :numeric-input-tokens
     :user-feedback
     ;; TODO: remove this flag.
     :v2-migration
