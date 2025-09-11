@@ -15,7 +15,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.token :as tk]
-   [app.config :as cfg]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
@@ -23,6 +22,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -117,7 +117,9 @@
 
 (mf/defc measures-menu*
   [{:keys [ids values applied-tokens type shapes]}]
-  (let [token-numeric-inputs (contains? cfg/flags :numeric-input-tokens)
+  (let [token-numeric-inputs (features/use-feature "design-tokens/v1")
+        #_(contains? cfg/flags :numeric-input-tokens)
+        
         all-types
         (mf/with-memo [type shapes]
           ;; We only need this when multiple type is used

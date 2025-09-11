@@ -51,6 +51,7 @@
     "styles/v2"
     "layout/grid"
     "plugins/runtime"
+    "token-numeric-inputs/v1"
     "design-tokens/v1"
     "text-editor/v2"
     "render-wasm/v1"
@@ -80,6 +81,7 @@
   #{"styles/v2"
     "plugins/runtime"
     "text-editor/v2"
+    "token-numeric-inputs/v1"
     "render-wasm/v1"})
 
 ;; Features that are mainly backend only or there are a proper
@@ -97,6 +99,7 @@
         "design-tokens/v1"
         "fdata/shape-data-type"
         "fdata/path-data"
+        "token-numeric-inputs/v1"
         "variants/v1"}
       (into frontend-only-features)
       (into backend-only-features)))
@@ -121,6 +124,7 @@
     :feature-text-editor-v2 "text-editor/v2"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
+    :feature-token-input "token-numeric-inputs/v1"
     nil))
 
 (defn migrate-legacy-features
