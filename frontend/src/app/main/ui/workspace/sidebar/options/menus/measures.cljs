@@ -384,7 +384,7 @@
            (st/emit! (dwta/unapply-token {:token token
                                           :attributes #{attr}
                                           :shape-ids ids}))))
-        
+
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
         (mf/use-fn
@@ -496,23 +496,23 @@
                   :title (tr "workspace.options.width")}
             [:span {:class (stl/css :icon-text)} "W"]
             [:> deprecated-input/numeric-input* {:min 0.01
-                                :no-validate true
-                                :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
-                                :on-change on-width-change
-                                :disabled disabled-width-sizing?
-                                :class (stl/css :numeric-input)
-                                :value (:width values)}]]
+                                                 :no-validate true
+                                                 :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
+                                                 :on-change on-width-change
+                                                 :disabled disabled-width-sizing?
+                                                 :class (stl/css :numeric-input)
+                                                 :value (:width values)}]]
            [:div {:class (stl/css-case :height true
                                        :disabled disabled-height-sizing?)
                   :title (tr "workspace.options.height")}
             [:span {:class (stl/css :icon-text)} "H"]
             [:> deprecated-input/numeric-input* {:min 0.01
-                                :no-validate true
-                                :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
-                                :on-change on-height-change
-                                :disabled disabled-height-sizing?
-                                :class (stl/css :numeric-input)
-                                :value (:height values)}]]])
+                                                 :no-validate true
+                                                 :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
+                                                 :on-change on-height-change
+                                                 :disabled disabled-height-sizing?
+                                                 :class (stl/css :numeric-input)
+                                                 :value (:height values)}]]])
 
         [:> icon-button* {:variant "ghost"
                           :icon (if proportion-lock "lock" "unlock")
@@ -551,22 +551,22 @@
                   :title (tr "workspace.options.x")}
             [:span {:class (stl/css :icon-text)} "X"]
             [:> deprecated-input/numeric-input* {:no-validate true
-                                :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
-                                :on-change on-pos-x-change
-                                :disabled disabled-position?
-                                :class (stl/css :numeric-input)
-                                :value (:x values)}]]
+                                                 :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
+                                                 :on-change on-pos-x-change
+                                                 :disabled disabled-position?
+                                                 :class (stl/css :numeric-input)
+                                                 :value (:x values)}]]
 
            [:div {:class (stl/css-case :y-position true
                                        :disabled disabled-position?)
                   :title (tr "workspace.options.y")}
             [:span {:class (stl/css :icon-text)} "Y"]
             [:> deprecated-input/numeric-input* {:no-validate true
-                                :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
-                                :disabled disabled-position?
-                                :on-change on-pos-y-change
-                                :class (stl/css :numeric-input)
-                                :value (:y values)}]]])])
+                                                 :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
+                                                 :disabled disabled-position?
+                                                 :on-change on-pos-y-change
+                                                 :class (stl/css :numeric-input)
+                                                 :value (:y values)}]]])])
 
      (when (or (options :rotation) (options :radius))
        [:div {:class (stl/css :rotation-radius)}
@@ -582,7 +582,7 @@
               :property (tr "workspace.options.rotation")
               :applied-tokens applied-tokens
               :values values}]
-            
+
             [:div {:class (stl/css :rotation)
                    :title (tr "workspace.options.rotation")}
              [:span {:class (stl/css :icon)}  deprecated-icon/rotation]
