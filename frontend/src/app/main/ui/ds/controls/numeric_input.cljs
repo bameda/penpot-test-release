@@ -156,19 +156,19 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
-  ;;  Crash with decimal numbers
-  ;;  [:value {:optional true} [:maybe [:or
-  ;;                                    :int
-  ;;                                    :string
-  ;;                                    [:= :multiple]]]]
+   [:value {:optional true} [:maybe [:or
+                                     :int
+                                     :float
+                                     :string
+                                     [:= :multiple]]]]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
    [:disabled {:optional true} [:maybe :boolean]]
-   [:min {:optional true} [:maybe :int]]
-   [:max {:optional true} [:maybe :int]]
+   [:min {:optional true} [:maybe [:or :int :float]]]
+   [:max {:optional true} [:maybe [:or :int :float]]]
    [:max-length {:optional true} :int]
-   [:step {:optional true} [:maybe :int]]
+   [:step {:optional true} [:maybe [:or :int :float]]]
    [:is-selected-on-focus {:optional true} :boolean]
    [:nillable {:optional true} :boolean]
    [:applied-token {:optional true} [:maybe [:or :string [:= :multiple]]]]
@@ -178,7 +178,7 @@
    [:on-focus {:optional true} fn?]
    [:on-detach {:optional true} fn?]
    [:property {:optional true} :string]
-   [:align {:optional true} [:enum :left :right]]])
+   [:align {:optional true} [:maybe [:enum :left :right]]]])
 
 (mf/defc numeric-input*
   {::mf/schema schema:numeric-input}
@@ -196,7 +196,6 @@
         tokens          (if (object? tokens)
                           (mfu/bean tokens)
                           tokens)
-        _ (prn value)
         value           (if (= :multiple applied-token)
                           :multiple
                           value)

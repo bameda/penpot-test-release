@@ -299,50 +299,52 @@
 
         active-tokens-by-type
         (mf/with-memo [active-tokens]
-          (delay (ctob/group-by-type active-tokens)))]
+          (delay (ctob/group-by-type active-tokens)))
+        token-numeric-inputs? (features/use-feature "token-numeric-inputs/v1")]
 
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+      [:> (mf/provider muc/token-inputs) {:value token-numeric-inputs?}
 
-      [:aside
-       {:class (stl/css-case :right-settings-bar true
-                             :not-expand (not can-be-expanded?)
-                             :expanded (> width sidebar-default-width))
+       [:aside
+        {:class (stl/css-case :right-settings-bar true
+                              :not-expand (not can-be-expanded?)
+                              :expanded (> width sidebar-default-width))
 
-        :id "right-sidebar-aside"
-        :data-testid "right-sidebar"
-        :data-size (str width)
-        :style {:--width (if can-be-expanded?
-                           (dm/str width "px")
-                           (dm/str sidebar-default-width "px"))}}
+         :id "right-sidebar-aside"
+         :data-testid "right-sidebar"
+         :data-size (str width)
+         :style {:--width (if can-be-expanded?
+                            (dm/str width "px")
+                            (dm/str sidebar-default-width "px"))}}
 
-       (when can-be-expanded?
-         [:div {:class (stl/css :resize-area)
-                :on-pointer-down on-pointer-down
-                :on-lost-pointer-capture on-lost-pointer-capture
-                :on-pointer-move on-pointer-move}])
+        (when can-be-expanded?
+          [:div {:class (stl/css :resize-area)
+                 :on-pointer-down on-pointer-down
+                 :on-lost-pointer-capture on-lost-pointer-capture
+                 :on-pointer-move on-pointer-move}])
 
-       [:> right-header*
-        {:file file
-         :layout layout
-         :page-id page-id}]
+        [:> right-header*
+         {:file file
+          :layout layout
+          :page-id page-id}]
 
-       [:div {:class (stl/css :settings-bar-inside)}
-        (cond
-          dbg-shape-panel?
-          [:> debug-shape-info*]
+        [:div {:class (stl/css :settings-bar-inside)}
+         (cond
+           dbg-shape-panel?
+           [:> debug-shape-info*]
 
-          is-comments?
-          [:> comments-sidebar* {}]
+           is-comments?
+           [:> comments-sidebar* {}]
 
-          is-history?
-          [:> history-content* {}]
+           is-history?
+           [:> history-content* {}]
 
-          :else
-          (let [props (mf/spread-props props
-                                       {:on-change-section on-change-section
-                                        :on-expand on-expand})]
-            [:> options-toolbox* props]))]]]]))
+           :else
+           (let [props (mf/spread-props props
+                                        {:on-change-section on-change-section
+                                         :on-expand on-expand})]
+             [:> options-toolbox* props]))]]]]]))
 
 (mf/defc sidebar*
   [{:keys [layout file file-id page-id section drawing-tool selected]}]
