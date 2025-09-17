@@ -606,6 +606,7 @@
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
         libs?       (= section :dashboard-libraries)
+        deleted?    (= section :dashboard-deleted)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
         container   (mf/use-ref nil)
@@ -666,6 +667,25 @@
                 (dom/focus! title)
                 (dom/set-attribute! title "tabindex" "-1"))))))
 
+        go-deleted
+        (mf/use-fn
+         (mf/deps team-id)
+         (fn [] (st/emit! (dcm/go-to-dashboard-deleted :team-id team-id))))
+
+        go-deleted-with-key
+        (mf/use-fn
+         (mf/deps team-id)
+         (fn []
+           (st/emit!
+            (dcm/go-to-dashboard-deleted :team-id team-id)
+            (ts/schedule-on-idle
+             (fn []
+               (let [deleted-title (dom/get-element "dashboard-deleted-title")]
+                 (when deleted-title
+                   (dom/set-attribute! deleted-title "tabindex" "0")
+                   (dom/focus! deleted-title)
+                   (dom/set-attribute! deleted-title "tabindex" "-1"))))))))
+
         go-libs
         (mf/use-fn
          (mf/deps team-id)
@@ -722,7 +742,14 @@
          [:& link {:action go-drafts
                    :class (stl/css :sidebar-link)
                    :keyboard-action go-drafts-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
+          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
+
+        [:li {:class (stl/css-case :current deleted?
+                                   :sidebar-nav-item true)}
+         [:& link {:action go-deleted
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-deleted-with-key}
+          [:span {:class (stl/css :element-title)} (tr "labels.deleted")]]]]]
 
 
       [:div {:class (stl/css :sidebar-content-section)}
