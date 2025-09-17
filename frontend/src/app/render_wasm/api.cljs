@@ -309,15 +309,38 @@
     (h/call wasm/internal-module "stringToUTF8" str offset size)
     (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
 
-;; FIXME: revisit on heap refactor is merged to use u32 instead u8
+(defn upload-shape-path-content-chunks
+  "Upload path content in chunks to WASM. Accepts a Uint8Array or ArrayBuffer."
+  [pdata size]
+  (let [u8arr (js/Uint8Array. (.-buffer pdata))
+        chunk-size 8] ;; FIXME wip testing
+    (h/call wasm/internal-module "_start_shape_path_content_upload")
+    (loop [offset 0]
+      (when (< offset size)
+        ;; TODO
+        (let [end (min size (+ offset chunk-size))
+              chunk (.slice u8arr offset end)
+              wasm-offset (mem/alloc chunk-size)
+              heap (mem/get-heap-u8)
+              dview  (js/DataView. (.-buffer heap))]
+          (.set heap chunk wasm-offset)
+          (h/call wasm/internal-module "_append_shape_path_content_chunk")
+          (mem/free)
+          (recur end))))
+    (h/call wasm/internal-module "_finalize_shape_path_content_upload")))
+
 (defn set-shape-path-content
   [content]
-  (let [pdata  (path/content content)
+  (let [pdata (path/content content)
         size   (path/get-byte-size content)
-        offset (mem/alloc size)
-        heap   (mem/get-heap-u8)]
-    (path/write-to pdata (.-buffer heap) offset)
-    (h/call wasm/internal-module "_set_shape_path_content")))
+        heap   (mem/get-heap-u8)
+        max-content-size 8] ;; FIXME wip testing
+    (if (> size max-content-size)
+      (upload-shape-path-content-chunks pdata size heap)
+      (let [offset (mem/alloc size)]
+        (.set heap pdata offset)
+        (h/call wasm/internal-module "_set_shape_path_content")
+        (mem/free)))))
 
 (defn set-shape-svg-raw-content
   [content]

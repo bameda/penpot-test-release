@@ -2,6 +2,7 @@
 use indexmap::IndexSet;
 use macros::ToJs;
 use mem::SerializableResult;
+use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
 use crate::math::bools;
@@ -152,17 +153,52 @@ impl From<Vec<RawSegmentData>> for Path {
     }
 }
 
+static PATH_UPLOAD_BUFFER: OnceLock<Mutex<Vec<u8>>> = OnceLock::new();
+
+fn get_path_upload_buffer() -> &'static Mutex<Vec<u8>> {
+    PATH_UPLOAD_BUFFER.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+#[no_mangle]
+pub extern "C" fn start_shape_path_buffer() {
+    let buffer = get_path_upload_buffer();
+    let mut buffer = buffer.lock().unwrap();
+    buffer.clear();
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_chunk_buffer() {
+    let bytes = mem::bytes();
+    let buffer = get_path_upload_buffer();
+    let mut buffer = buffer.lock().unwrap();
+    buffer.extend_from_slice(&bytes);
+    mem::free_bytes();
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_buffer() {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        let buffer = get_path_upload_buffer();
+        let mut buffer = buffer.lock().unwrap();
+        let segments = buffer
+            .chunks(size_of::<RawSegmentData>())
+            .map(|chunk| RawSegmentData::try_from(chunk).expect("Invalid path data"))
+            .map(Segment::from)
+            .collect();
+        shape.set_path_segments(segments);
+        buffer.clear();
+    });
+}
+
 #[no_mangle]
 pub extern "C" fn set_shape_path_content() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
-
         let segments = bytes
             .chunks(size_of::<RawSegmentData>())
             .map(|chunk| RawSegmentData::try_from(chunk).expect("Invalid path data"))
             .map(Segment::from)
             .collect();
-
         shape.set_path_segments(segments);
     });
 }
