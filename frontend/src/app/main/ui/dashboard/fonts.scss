@@ -50,6 +50,7 @@
   text-transform: uppercase;
 
   > .family {
+    @include twoLineTextEllipsis;
     min-width: $s-200;
     width: $s-200;
   }
@@ -114,6 +115,7 @@
   }
 
   > .family {
+    @include twoLineTextEllipsis;
     min-width: $s-200;
     width: $s-200;
   }
