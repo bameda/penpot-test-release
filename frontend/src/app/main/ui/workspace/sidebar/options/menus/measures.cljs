@@ -22,6 +22,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -116,7 +117,8 @@
 
 (mf/defc measures-menu*
   [{:keys [ids values applied-tokens type shapes]}]
-  (let [token-numeric-inputs (mf/use-ctx muc/token-inputs)
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
 
         all-types
         (mf/with-memo [type shapes]
@@ -377,13 +379,25 @@
         on-pos-y-change
         (mf/use-fn (mf/deps on-position-change) #(on-position-change % :y))
 
+
+        ;; DETACH
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token token
+           (st/emit! (dwta/unapply-token {:token (first token)
                                           :attributes #{attr}
                                           :shape-ids ids}))))
+        on-detach-width
+        (mf/use-fn (mf/deps on-detach-token) #(on-detach-token % :width))
+        on-detach-height
+        (mf/use-fn (mf/deps on-detach-token) #(on-detach-token % :heigth))
+        on-detach-x-position
+        (mf/use-fn (mf/deps on-detach-token) #(on-detach-token % :x))
+        on-detach-y-position
+        (mf/use-fn (mf/deps on-detach-token) #(on-detach-token % :y))
+        on-detach-rotation
+        (mf/use-fn (mf/deps on-detach-token) #(on-detach-token % :rotation))
 
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
@@ -472,17 +486,18 @@
            [:> numeric-input-wrapper*
             {:disabled disabled-width-sizing?
              :on-change on-width-change
-             :on-detach on-detach-token
+             :on-detach on-detach-width
              :icon i/character-w
              :min 0.01
              :name :width
              :property (tr "workspace.options.width")
              :applied-tokens applied-tokens
              :values values}]
+
            [:> numeric-input-wrapper*
             {:disabled disabled-height-sizing?
              :on-change on-height-change
-             :on-detach on-detach-token
+             :on-detach on-detach-height
              :min 0.01
              :icon i/character-h
              :name :height
@@ -490,18 +505,20 @@
              :property (tr "workspace.options.height")
              :applied-tokens applied-tokens
              :values values}]]
+
           [:*
            [:div {:class (stl/css-case :width true
                                        :disabled disabled-width-sizing?)
                   :title (tr "workspace.options.width")}
             [:span {:class (stl/css :icon-text)} "W"]
-            [:> deprecated-input/numeric-input* {:min 0.01
-                                                 :no-validate true
-                                                 :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
-                                                 :on-change on-width-change
-                                                 :disabled disabled-width-sizing?
-                                                 :class (stl/css :numeric-input)
-                                                 :value (:width values)}]]
+            [:> deprecated-input/numeric-input*
+             {:min 0.01
+              :no-validate true
+              :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
+              :on-change on-width-change
+              :disabled disabled-width-sizing?
+              :class (stl/css :numeric-input)
+              :value (:width values)}]]
            [:div {:class (stl/css-case :height true
                                        :disabled disabled-height-sizing?)
                   :title (tr "workspace.options.height")}
@@ -528,7 +545,7 @@
            [:> numeric-input-wrapper*
             {:disabled disabled-position?
              :on-change on-pos-x-change
-             :on-detach on-detach-token
+             :on-detach on-detach-x-position
              :icon i/character-x
              :name :x
              :property (tr "workspace.options.x")
@@ -537,7 +554,7 @@
            [:> numeric-input-wrapper*
             {:disabled disabled-position?
              :on-change on-pos-y-change
-             :on-detach on-detach-token
+             :on-detach on-detach-y-position
              :icon i/character-y
              :name :y
              :align :right
@@ -574,7 +591,7 @@
           (if token-numeric-inputs
             [:> numeric-input-wrapper*
              {:on-change on-rotation-change
-              :on-detach on-detach-token
+              :on-detach on-detach-rotation
               :icon i/rotation
               :min -359
               :max 359
