@@ -3,10 +3,16 @@ name: Release Publisher
 on:
   workflow_dispatch:
     inputs:
-      tag:
+      gh_ref:
         description: 'Tag to release'
-        required: true
         type: string
+        required: true
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Tag to release'
+        type: string
+        required: true
 
 permissions:
   contents: write
@@ -14,17 +20,26 @@ permissions:
 jobs:
   get-release-notes:
     environment: release-admins
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       release_notes: ${{ steps.extract.outputs.release_notes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Extract release notes from CHANGES.md
         id: extract
+        env:
+          TAG: ${{ steps.vars.outputs.gh_ref }}
         run: |
-          TAG="${{ github.event.inputs.tag }}"
           # Extract lines between headers "## $TAG" and next "## "
           RELEASE_NOTES=$(awk "/^## $TAG$/{flag=1; next} /^## /{flag=0} flag" CHANGES.md | awk '{$1=$1};1')
           # Fallback if nothing found
@@ -35,17 +50,67 @@ jobs:
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+  publish-docker-image:
+    environment: release-admins
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Login to Amazon ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.PUB_DOCKER_USERNAME }}
+          password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      - name: Pull Docker images from ECR and push to DockerHub
+        env:
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+          REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          HUB: ${{ secrets.PUB_DOCKER_HUB }}
+        run: |
+          IMAGES=("frontend" "backend" "exporter")
+          EXTRA_TAGS=("main" "latest")
+
+          # Pull and push image with $TAG
+          for image in "${IMAGES[@]}"; do
+            docker pull "$REGISTRY/penpotapp/$image:$TAG"
+            docker tag "$REGISTRY/penpotapp/$image:$TAG" "$HUB/$image:$TAG"
+            docker push "$HUB/$image:$TAG"
+
+            # Tag and push images with $EXTRA_TAGS
+            for tag in "${EXTRA_TAGS[@]}"; do
+              docker tag "$REGISTRY/penpotapp/$image:$TAG" "$HUB/$image:$tag"
+              docker push "$HUB/$image:$tag"
+            done
+          done
+
   create-release:
     environment: release-admins
     needs:
       - get-release-notes
+      - publish-docker-image
     runs-on: ubuntu-latest
     steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: ${{ github.event.inputs.tag }}
+          tag_name: ${{ steps.vars.outputs.gh_ref }}
+          name: ${{ steps.vars.outputs.gh_ref }}
           body: ${{ needs.get-release-notes.outputs.release_notes }}
